@@ -30,18 +30,14 @@ public class TaskManagementServiceImpl implements TaskManagementService {
     public TaskManagementDto findTaskById(Long id) {
         TaskManagement task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
-        System.out.println("Found Task: " + task);
         return taskMapper.modelToDto(task);
     }
 
     @Override
     public List<TaskManagementDto> createTasks(TaskCreateRequest createRequest) {
-        System.out.println("Received create request: " + createRequest);
         List<TaskManagement> createdTasks = new ArrayList<>();
 
         for (TaskCreateRequest.RequestItem item : createRequest.getRequests()) {
-            System.out.println("Processing item: " + item);
-
             TaskManagement newTask = new TaskManagement();
             newTask.setReferenceId(item.getReferenceId());
             newTask.setReferenceType(item.getReferenceType());
@@ -52,26 +48,14 @@ public class TaskManagementServiceImpl implements TaskManagementService {
             newTask.setStatus(TaskStatus.ASSIGNED);
             newTask.setDescription("New task created.");
 
-            System.out.println("Created Task entity: " + newTask);
-
-            TaskManagement saved = taskRepository.save(newTask);
-            System.out.println("Saved Task: " + saved);
-
-            createdTasks.add(saved);
+            createdTasks.add(taskRepository.save(newTask));
         }
 
-       List<TaskManagementDto> dtos = taskMapper.modelListToDtoList(createdTasks);
-//        List<TaskManagementDto> dtos = createdTasks.stream()
-//                .map(this::toDto)
-//                .collect(Collectors.toList());
-
-        System.out.println("Mapped DTOs: (debug): " + dtos);
-        return dtos;
+        return taskMapper.modelListToDtoList(createdTasks);
     }
 
     @Override
     public List<TaskManagementDto> updateTasks(UpdateTaskRequest updateRequest) {
-        System.out.println("Received update request: " + updateRequest);
         List<TaskManagement> updatedTasks = new ArrayList<>();
 
         for (UpdateTaskRequest.RequestItem item : updateRequest.getRequests()) {
@@ -85,50 +69,44 @@ public class TaskManagementServiceImpl implements TaskManagementService {
                 task.setDescription(item.getDescription());
             }
 
-            TaskManagement saved = taskRepository.save(task);
-            System.out.println("Updated Task: " + saved);
-            updatedTasks.add(saved);
+            updatedTasks.add(taskRepository.save(task));
         }
 
         return taskMapper.modelListToDtoList(updatedTasks);
     }
 
+    //  Bug 1: Reassigning cancels old task and creates new task
     @Override
     public String assignByReference(AssignByReferenceRequest request) {
-        System.out.println("Received assign-by-reference request: " + request);
-        List<Task> applicableTasks = Task.getTasksByReferenceType(request.getReferenceType());
-        List<TaskManagement> existingTasks = taskRepository.findByReferenceIdAndReferenceType(
-                request.getReferenceId(), request.getReferenceType());
+        List<TaskManagement> existingTasks = taskRepository
+                .findByReferenceIdAndReferenceType(request.getReferenceId(), request.getReferenceType());
 
-        for (Task taskType : applicableTasks) {
-            List<TaskManagement> tasksOfType = existingTasks.stream()
-                    .filter(t -> t.getTask() == taskType && t.getStatus() != TaskStatus.COMPLETED)
-                    .toList();
+        for (TaskManagement oldTask : existingTasks) {
+            // Cancel the old task
+            oldTask.setStatus(TaskStatus.CANCELLED);
+            oldTask.setDescription("Task reassigned.");
+            taskRepository.save(oldTask);
 
-            for (TaskManagement oldTask : tasksOfType) {
-                oldTask.setStatus(TaskStatus.CANCELLED);
-                TaskManagement cancelled = taskRepository.save(oldTask);
-                System.out.println("Cancelled old task: " + cancelled);
-            }
-
+            // Create a new task with same type but new assignee
             TaskManagement newTask = new TaskManagement();
-            newTask.setReferenceId(request.getReferenceId());
-            newTask.setReferenceType(request.getReferenceType());
-            newTask.setTask(taskType);
+            newTask.setReferenceId(oldTask.getReferenceId());
+            newTask.setReferenceType(oldTask.getReferenceType());
+            newTask.setTask(oldTask.getTask());
             newTask.setAssigneeId(request.getAssigneeId());
             newTask.setStatus(TaskStatus.ASSIGNED);
             newTask.setDescription("Task reassigned.");
+            newTask.setTaskDeadlineTime(oldTask.getTaskDeadlineTime());
+            newTask.setPriority(oldTask.getPriority());
 
-            TaskManagement saved = taskRepository.save(newTask);
-            System.out.println("Assigned new task: " + saved);
+            taskRepository.save(newTask);
         }
 
         return "Tasks assigned successfully for reference " + request.getReferenceId();
     }
 
+    //  Bug 2: Cancelled tasks are excluded from view
     @Override
     public List<TaskManagementDto> fetchTasksByDate(TaskFetchByDateRequest request) {
-        System.out.println("Received fetch-by-date request: " + request);
         List<TaskManagement> tasks = taskRepository.findByAssigneeIdIn(request.getAssigneeIds());
 
         List<TaskManagement> filteredTasks = tasks.stream()
@@ -141,21 +119,7 @@ public class TaskManagementServiceImpl implements TaskManagementService {
                 })
                 .collect(Collectors.toList());
 
-        System.out.println("Filtered Tasks: " + filteredTasks);
         return taskMapper.modelListToDtoList(filteredTasks);
     }
-
-//    private TaskManagementDto toDto(TaskManagement task) {
-//        TaskManagementDto dto = new TaskManagementDto();
-//        dto.setId(task.getId());
-//        dto.setReferenceId(task.getReferenceId());
-//        dto.setReferenceType(task.getReferenceType());
-//        dto.setTask(task.getTask());
-//        dto.setDescription(task.getDescription());
-//        dto.setStatus(task.getStatus());
-//        dto.setAssigneeId(task.getAssigneeId());
-//        dto.setTaskDeadlineTime(task.getTaskDeadlineTime());
-//        dto.setPriority(task.getPriority());
-//        return dto;
-//    }
 }
+
