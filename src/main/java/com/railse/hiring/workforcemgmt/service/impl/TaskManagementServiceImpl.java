@@ -104,7 +104,6 @@ public class TaskManagementServiceImpl implements TaskManagementService {
         return "Tasks assigned successfully for reference " + request.getReferenceId();
     }
 
-    //  Bug 2: Cancelled tasks are excluded from view
     @Override
     public List<TaskManagementDto> fetchTasksByDate(TaskFetchByDateRequest request) {
         List<TaskManagement> tasks = taskRepository.findByAssigneeIdIn(request.getAssigneeIds());
@@ -113,13 +112,18 @@ public class TaskManagementServiceImpl implements TaskManagementService {
                 .filter(task -> task.getStatus() != TaskStatus.CANCELLED)
                 .filter(task -> {
                     Long deadline = task.getTaskDeadlineTime();
-                    return deadline != null &&
-                            deadline >= request.getStartDate() &&
-                            deadline <= request.getEndDate();
+                    if (deadline == null) return false;
+
+                    // Smart logic:
+                    boolean withinRange = deadline >= request.getStartDate() && deadline <= request.getEndDate();
+                    boolean beforeRangeButStillOpen = deadline < request.getStartDate() && task.getStatus() != TaskStatus.COMPLETED;
+
+                    return withinRange || beforeRangeButStillOpen;
                 })
                 .collect(Collectors.toList());
 
         return taskMapper.modelListToDtoList(filteredTasks);
     }
+
 }
 
