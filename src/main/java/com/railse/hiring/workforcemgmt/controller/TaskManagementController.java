@@ -52,5 +52,14 @@ public class TaskManagementController {
     public Response<List<TaskManagementDto>> getTasksByPriority(@PathVariable Priority priority) {
         return new Response<>(taskManagementService.getTasksByPriority(priority));
     }
+    @PostMapping("/{taskId}/comment")
+    public Response<TaskCommentDto> addComment(@PathVariable Long taskId, @RequestBody AddCommentRequest request) {
+        return new Response<>(taskManagementService.addComment(taskId, request));
+    }
+
+    @GetMapping("/{taskId}/comments")
+    public Response<List<TaskCommentDto>> getComments(@PathVariable Long taskId) {
+        return new Response<>(taskManagementService.getComments(taskId));
+    }
 
 }

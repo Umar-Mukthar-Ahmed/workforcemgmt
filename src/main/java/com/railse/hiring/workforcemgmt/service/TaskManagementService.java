@@ -13,5 +13,7 @@ public interface TaskManagementService {
     TaskManagementDto findTaskById(Long id);
     TaskManagementDto updateTaskPriority(Long taskId, Priority priority);
     List<TaskManagementDto> getTasksByPriority(Priority priority);
+    TaskCommentDto addComment(Long taskId, AddCommentRequest request);
+    List<TaskCommentDto> getComments(Long taskId);
 
 }

@@ -2,6 +2,8 @@ package com.railse.hiring.workforcemgmt.repository;
 
 import com.railse.hiring.workforcemgmt.model.TaskManagement;
 import com.railse.hiring.workforcemgmt.common.model.enums.ReferenceType;
+import com.railse.hiring.workforcemgmt.dto.TaskCommentDto;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -12,4 +14,6 @@ public interface TaskRepository {
     List<TaskManagement> findAll();
     List<TaskManagement> findByReferenceIdAndReferenceType(Long referenceId, ReferenceType referenceType);
     List<TaskManagement> findByAssigneeIdIn(List<Long> assigneeIds);
+    void addComment(Long taskId, TaskCommentDto comment);
+    List<TaskCommentDto> getComments(Long taskId);
 }

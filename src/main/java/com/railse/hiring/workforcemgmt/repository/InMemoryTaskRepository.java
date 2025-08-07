@@ -1,5 +1,6 @@
 package com.railse.hiring.workforcemgmt.repository;
 import com.railse.hiring.workforcemgmt.common.model.enums.ReferenceType;
+import com.railse.hiring.workforcemgmt.dto.TaskCommentDto;
 import com.railse.hiring.workforcemgmt.model.TaskManagement;
 import com.railse.hiring.workforcemgmt.model.enums.Priority;
 import com.railse.hiring.workforcemgmt.model.enums.Task;
@@ -15,6 +16,8 @@ import java.util.stream.Collectors;
 public class InMemoryTaskRepository implements TaskRepository {
 
     private final Map<Long, TaskManagement> taskStore = new ConcurrentHashMap<>();
+    private final Map<Long, List<TaskCommentDto>> taskComments = new ConcurrentHashMap<>();
+
     private final AtomicLong idCounter = new AtomicLong(0);
 
     public InMemoryTaskRepository() {
@@ -75,4 +78,15 @@ public class InMemoryTaskRepository implements TaskRepository {
                 .filter(task -> assigneeIds.contains(task.getAssigneeId()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void addComment(Long taskId, TaskCommentDto comment) {
+        taskComments.computeIfAbsent(taskId, k -> new ArrayList<>()).add(comment);
+    }
+
+    @Override
+    public List<TaskCommentDto> getComments(Long taskId) {
+        return taskComments.getOrDefault(taskId, new ArrayList<>());
+    }
+
 }
