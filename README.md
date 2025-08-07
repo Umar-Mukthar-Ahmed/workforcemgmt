@@ -1,9 +1,9 @@
 #### Workforce Management Application
 
 #### Requirements  
-#### Language: Java 17  
-#### Framework: Spring Boot 3.0.4  
-#### Build Tool: Gradle  
+1. **Language**: Java 17  
+2. **Framework**: Spring Boot 3.0.4  
+3. **Build Tool**: Gradle  
 
 #### To Clone
 ```bash
