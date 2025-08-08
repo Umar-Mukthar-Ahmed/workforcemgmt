@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy =
         NullValuePropertyMappingStrategy.IGNORE)
 public interface ITaskManagementMapper {
-    ITaskManagementMapper INSTANCE = Mappers.getMapper(ITaskManagementMapper.class);
+   // ITaskManagementMapper INSTANCE = Mappers.getMapper(ITaskManagementMapper.class);
 
     TaskManagementDto modelToDto(TaskManagement model);
 
